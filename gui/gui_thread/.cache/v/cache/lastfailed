@@ -1,0 +1,4 @@
+{
+  "gui_thread.py": true, 
+  "test.py::TestQThread::test_single_run_thread": true
+}
