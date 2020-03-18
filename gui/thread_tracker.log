@@ -1,4 +1,4 @@
-[2020-03-17 14:31:30,059]: INFO method:"method_call_wrap" decorator thread_this_method: Converting method reflash into GuiThread object
-[2020-03-17 14:31:30,059]: INFO method:"method_call_wrap" decorator thread_this_method: Converting method reflash into GuiThread object
-[2020-03-17 14:31:30,059]: INFO method:"method_call_wrap" GuiThread with args: (<__main__.Reflasher object at 0x0000000002984C18>,), kwargs: {}
-[2020-03-17 14:31:30,059]: INFO method:"method_call_wrap" GuiThread with args: (<__main__.Reflasher object at 0x0000000002984C18>,), kwargs: {}
+[2020-03-18 20:36:55,586]: INFO method:"method_call_wrap" decorator thread_this_method: Converting method reflash into GuiThread object
+[2020-03-18 20:36:55,586]: INFO method:"method_call_wrap" decorator thread_this_method: Converting method reflash into GuiThread object
+[2020-03-18 20:36:55,586]: INFO method:"method_call_wrap" GuiThread with args: (<__main__.Reflasher object at 0x00000000038813A8>,), kwargs: {}
+[2020-03-18 20:36:55,586]: INFO method:"method_call_wrap" GuiThread with args: (<__main__.Reflasher object at 0x00000000038813A8>,), kwargs: {}

@@ -10,13 +10,15 @@ import struct
 
 from PyQt4 import QtGui
 from PyQt4.QtGui import QFileDialog
-from PyQt4.QtCore import pyqtSignal
+from PyQt4.QtCore import pyqtSignal, QString
 
 from intel_hex_handler import intel_hex_parser
 from gui_thread import thread_this_method
+from win_com_port_handler import get_com_devices, ListPortInfo
 
 from gui.loggers import create_logger
 from gui.message_handler import MessageSender, MessageReceiver, RxMessage
+
 
 
 stdout_log = create_logger("stdout")
@@ -111,8 +113,63 @@ class ColorProgressBar(QtGui.QProgressBar):
     def set_blue_style(self):
         self.setStyleSheet(BLUE_STYLE)
 
+class ComDevicesComboBox(QtGui.QGroupBox):
+    def __init__(self):
+        QtGui.QGroupBox.__init__(self)
+        self.label = QtGui.QLabel("Select com port device: ")
+        self.label.setFont(QtGui.QFont('Courier New', 12))
+        self.descr_label = QtGui.QLabel()
+
+
+        self.combo_box = QtGui.QComboBox(self)
+
+        self.combo_box.currentIndexChanged.connect(self.index_changed)
+
+        com_devices = get_com_devices()
+        self.encoder = {
+            'utf-8': QString.fromUtf8,
+            'ascii': QString.fromAscii,
+            'ascii-r': QString.fromAscii,
+        }[ListPortInfo.encoding_scheme]
+        self.devices = [i for i in com_devices]
+        self.devices.sort(key=lambda i:i.manufacturer != 'FTDI')
+        print [i.manufacturer for i in self.devices]
+        print [i.device for i in self.devices]
+        self.combo_box.addItems([i.device for i in self.devices])
+
+        grid = QtGui.QGridLayout()
+        grid.setSpacing(1)
+        grid.addWidget(self.label, 0, 0)
+        grid.addWidget(self.combo_box, 0, 1)
+        grid.addWidget(self.descr_label, 1, 1, 2, 1)
+
+        self.setLayout(grid)
+
+    def index_changed(self, index):
+        def short_str(s):
+            max_str_len = 30
+            if len(s) > max_str_len:
+                return s[0:max_str_len] + '...'
+            return s
+        device_info = self.devices[index]
+        self.combo_box.setToolTip(self.encoder(str(device_info)))
+        descr = "manufacturer: {}\n" \
+                "description: {}".format(
+            short_str(device_info.manufacturer),
+            short_str(device_info.description)
+        )
+        self.descr_label.setText(self.encoder(descr))
+        print self.get_currnet_serial_device()
+
+    def get_currnet_serial_device(self):
+        device = filter(lambda i: i.device==self.combo_box.currentText(), self.devices)[0]
+        return device
+
+
 class Reflasher(QtGui.QWidget):
-    #def __init__(self, app_status_file, emulator, receive_data_thread=None, signal_on_close=None, message_sender=None):
+    #TODO: create serial connection class for communicaton, use emulator from emu_bt_r as reference
+    #TODO: the class must be more gneric, should handle bluetooth and FTDI as well
+    #TODO: use some abstract classes for that ?
     def __init__(self, app_status_file, serial_connection, receive_data_thread=None, signal_on_close=None):
         QtGui.QWidget.__init__(self)
         self.setWindowTitle("REFLASH")
@@ -146,6 +203,9 @@ class Reflasher(QtGui.QWidget):
         self.text_browser.append("!WARNING!")
         self.text_browser.append("SELECT HEX FILE")
 
+        #COM DEVICES LIST
+        self.com_devices = ComDevicesComboBox()
+
         #BUTTONS
         self.browse_button = QtGui.QPushButton("...")
         self.reflash_button = QtGui.QPushButton("REFLASH")
@@ -160,10 +220,11 @@ class Reflasher(QtGui.QWidget):
         mainGrid.setSpacing(10)
         mainGrid.addWidget(self.line_edit,      0, 0, 1, 5)
         mainGrid.addWidget(self.browse_button,  0, 5)
-        mainGrid.addWidget(self.text_browser,   1, 0, 3, 5)
-        mainGrid.addWidget(self.progress_bar,   4, 0, 1, 5)
-        mainGrid.addWidget(self.cancel_button,  5, 0, 1, 1)
-        mainGrid.addWidget(self.reflash_button, 5, 4, 1, 1)
+        mainGrid.addWidget(self.com_devices,    1, 0, 1, 5)
+        mainGrid.addWidget(self.text_browser,   2, 0, 3, 5)
+        mainGrid.addWidget(self.progress_bar,   5, 0, 1, 5)
+        mainGrid.addWidget(self.cancel_button,  6, 0, 1, 1)
+        mainGrid.addWidget(self.reflash_button, 6, 4, 1, 1)
         self.setLayout(mainGrid)
         self.__expected_version = None
         self.resize(self.x_siz, self.y_siz)
