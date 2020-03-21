@@ -1,2 +1,5 @@
 *.pyc
+*.sts
+*.log
 .idea/
+.cache/
