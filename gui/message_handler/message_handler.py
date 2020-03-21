@@ -130,10 +130,10 @@ class MessageSender:
             except IndexError:
                 return None
 
-    def __init__(self, tx_interface, rx_buffer):
+    def __init__(self, tx_interface):
         self.mutex = QMutex()
         self.__transmit = tx_interface
-        self.__rx_buffer = rx_buffer
+        #self.__rx_buffer = rx_buffer
 
     def __send_m(self, msg, m_id):
         """
@@ -149,6 +149,9 @@ class MessageSender:
         m_logger.debug(msg[11:30])
         self.__transmit(msg)
         return context
+
+    def peek_context(self):
+        return MessageSender.context + 1
 
     def send(self, m_id, body='NULL'):
         """
@@ -241,6 +244,14 @@ class RxMessage(object):
     @property
     def id(self):
         return self.__id
+
+    @property
+    def ids(self):
+        """
+        id str
+        :return:
+        """
+        return RxMessage.rx_id[self.id]
 
     @property
     def context(self):

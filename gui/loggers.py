@@ -45,11 +45,3 @@ def create_logger(name, log_path=None, format=log_format, log_level=logging.DEBU
     logger.addHandler(handler)
     return logger
 
-# class ExceptionLogger():
-#     def __init__(self, name='main_exceptions'):
-#         log_format = '[%(asctime)s]: %(levelname)s %(message)s'
-#         logger_name = name
-#         self.exception_logger = create_logger(logger_name, log_format, log_to_file=True)
-#
-#     def write(self, msg):
-#         self.exception_logger.error(msg)
