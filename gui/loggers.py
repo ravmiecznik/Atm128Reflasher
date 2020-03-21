@@ -26,22 +26,26 @@ def tstamp():
     ts_ms = "{:.3f}".format(ts_ms).zfill(6)
     return "{:02d}:{:02d}:{}:".format(ts.tm_hour, ts.tm_min, ts_ms)
 
-log_format = '[%(asctime)s %(filename)s:%(lineno)d in func:%(funcName)s thr:%(threadName)s]: %(levelname)s %(message)s'
+log_format = '[%(asctime)s %(name)s %(filename)s:%(lineno)d in func:%(funcName)s thr:%(threadName)s]: %(levelname)s %(message)s'
 
 def create_logger(name, log_path=None, format=log_format, log_level=logging.DEBUG):
     log_formatter = logging.Formatter(format)
+    logger = logging.getLogger(name)
     if log_path is not None:
         log_file = '{}.log'.format(name)
         log_file = os.path.join(log_path, log_file)
         with open(log_file, 'w') as lf:
             lf.write('')
-        handler = logging.FileHandler(log_file)
+        if not logger.handlers:
+            handler = logging.FileHandler(log_file)
+            handler.setFormatter(log_formatter)
+            logger.addHandler(handler)
     else:
-        handler = logging.StreamHandler(sys.stdout)
-    handler.setFormatter(log_formatter)
+        if not logger.handlers:
+            handler = logging.StreamHandler(sys.stdout)
+            handler.setFormatter(log_formatter)
+            logger.addHandler(handler)
 
-    logger = logging.getLogger(name)
     logger.setLevel(log_level)
-    logger.addHandler(handler)
     return logger
 
