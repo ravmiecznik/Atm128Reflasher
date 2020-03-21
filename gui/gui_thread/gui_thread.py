@@ -5,14 +5,8 @@ contact: ravmiecznk@gmail.com
 
 import time
 from PyQt4.QtCore import QThread
-from gui.config import LOG_PATH
+from gui.config import LOG_PATH, thread_logger as t_logger
 
-from gui.loggers import create_logger
-
-log_format = '[%(asctime)s]: %(levelname)s method:"%(funcName)s" %(message)s'
-logger_name = "thread_tracker"
-
-t_logger = create_logger(logger_name, log_path=LOG_PATH, format=log_format)
 info = t_logger.info
 
 
@@ -144,6 +138,7 @@ class GuiThread(QThread):
         if not self.__suspend:
             # if self.__trace == 'full':
             #     t_logger.debug("start of: {}, period: {}".format(self, self.__period))
+            t_logger.debug("start of: {}, period: {}".format(self, self.__period))
             self.result = self.target(*self.__args, **self.__kwargs)
         elif not self.__was_suspension_communicated:
             t_logger.debug("suspended: {}".format(self))

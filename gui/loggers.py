@@ -26,7 +26,8 @@ def tstamp():
     ts_ms = "{:.3f}".format(ts_ms).zfill(6)
     return "{:02d}:{:02d}:{}:".format(ts.tm_hour, ts.tm_min, ts_ms)
 
-log_format = '[%(asctime)s %(name)s %(filename)s:%(lineno)d in func:%(funcName)s thr:%(threadName)s]: %(levelname)s %(message)s'
+log_format = '[%(asctime)s %(filename)s:%(lineno)d %(funcName)s thr:%(threadName)s]: %(levelname)s %(message)s'
+log_format_basic = '[%(asctime)s %(message)s'
 
 def create_logger(name, log_path=None, format=log_format, log_level=logging.DEBUG):
     log_formatter = logging.Formatter(format)

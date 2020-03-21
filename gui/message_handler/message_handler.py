@@ -167,7 +167,6 @@ class MessageSender:
 
     def __send(self, m_id=None, body='NULL'):
         msg = create_message(msg_id=m_id, body=body, context=MessageSender.context) if m_id is not None else body
-
         self.mutex.lock()
         context = self.__send_m(msg, m_id)
         self.mutex.unlock()

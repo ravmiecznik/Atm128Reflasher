@@ -8,23 +8,30 @@ import time
 import serial
 from queue import Queue
 from threading import Thread, Lock
+from gui.circ_io_buffer import CircIoBuffer
 
-from gui.loggers import create_logger
+from gui.gui_thread import thread_this_method, GuiThread
+from gui.config import thread_logger
 
-logger = create_logger("thread_logs")
-dbg = logger.debug
+dbg = thread_logger.debug
+
 
 class SerialThread(Thread):
-    def __init__(self, target, period=0, delay=0, args=(), kwargs={}):
+    def __init__(self, target, period=0, delay=0, log_eriod=1, args=(), kwargs={}):
         self.target = target
         self.period = period
         self.delay = delay
         self.args = args
         self.kwargs = kwargs
+        self.log_period = log_eriod
+        self.__log_tstamp = time.time()
         Thread.__init__(self)
 
     def target_call(self):
-        #dbg("Call: {}, args: {}, kwargs: {}".format(self.target.__name__, self.args, self.kwargs))
+        if time.time() - self.__log_tstamp > self.log_period:
+            dbg("Call: {}, args: {}, kwargs: {}, period: {}".format(self.target.__name__, self.args, self.kwargs,
+                                                                    self.period))
+            self.__log_tstamp = time.time()
         self.target(*self.args, **self.kwargs)
 
     def run(self):
@@ -44,12 +51,12 @@ class SerialThread(Thread):
         dbg('terminated: {}'.format(self.target.__name__))
 
 
-
 class SerialConnection(serial.Serial):
     def __init__(self, **kwargs):
         self.data_ready_sig = kwargs.pop('data_ready_signal', lambda x:x)
+        period = kwargs.get('timeout', 0.002)
         serial.Serial.__init__(self, **kwargs)
-        self.reader = SerialThread(target=self.rx_data_thread, period=0.1)
+        self.reader = SerialThread(target=self.rx_data_thread, period=period)
         self.queue = Queue(maxsize=1024)
         self.reader.start()
 
@@ -67,6 +74,8 @@ class SerialConnection(serial.Serial):
 
     def send(self, data):
         self.write(data)
+
+
 
 if __name__ == "__main__":
     mutex = Lock()
