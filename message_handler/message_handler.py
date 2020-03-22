@@ -29,7 +29,6 @@ from auxiliary_module import Uint16, MeanCalculator
 from config import LOG_PATH
 
 
-#log_format = '[%(pathname)s:%(lineno)s %(asctime)s]: %(levelname)s method:"%(funcName)s" %(message)s'
 log_format = '[%(asctime)s]: %(levelname)s method:"%(funcName)s" %(message)s'
 logger_name = "message_handler"
 m_logger = create_logger(logger_name, log_path=LOG_PATH, format=log_format)
@@ -41,8 +40,10 @@ MAX_PACKET_SIZE = 256*8 + 20
 class MsgLockTimeout(Exception):
     pass
 
+
 class RxTimeout(Exception):
     pass
+
 
 class TxTimeout(Exception):
     pass
@@ -95,32 +96,9 @@ class MessageSender:
         txt_message     = 0
         write_to_page   = 1
         rxflush         = 2
-        setbankname     = 3
-        get_sram_packet = 4
-        get_bank_packet = 5
-        enable_sram     = 6
-        reload_sram     = 7
-        send_sram_bytes = 8
-        handshake       = 9
-        get_write_stats = 10
         bootloader      = 11
         disable_btlrd   = 12
-        dummy           = 13
         reset           = 14
-        bank1_set       = 15
-        bank2_set       = 16
-        bank3_set       = 17
-        get_bank_in_use = 18
-        set_bank_name   = 19
-        dgf_code_check  = 20
-        set_pin         = 21
-        digidag_enable  = 22
-        digidag_disable = 23
-        wipe_banks      = 24
-        bootloader_old  = 25
-        get_banks_info  = 26
-        reset_banks_info = 27
-        update_bank_data = 28
         run_main_app_btl= 254
 
         @classmethod
@@ -133,7 +111,6 @@ class MessageSender:
     def __init__(self, tx_interface):
         self.mutex = QMutex()
         self.__transmit = tx_interface
-        #self.__rx_buffer = rx_buffer
 
     def __send_m(self, msg, m_id):
         """
@@ -199,7 +176,7 @@ class RxMessage(object):
         nak_feedback,
     };
     """
-    rx_id_tuple = ('ack', 'nack', 'dtx', 'txt', 'dbg', 'dgframe', 'pin_change_pending', 'banks_info')
+    rx_id_tuple = ('ack', 'nack', 'dtx', 'txt', 'dbg')
     rx_id = RxId(rx_id_tuple)
 
     class RxId():
@@ -208,9 +185,6 @@ class RxMessage(object):
         dtx                 = 2
         txt                 = 3
         dbg                 = 4
-        dgframe             = 5
-        pin_change_pending  = 6
-        banks_info          = 7
 
     def __init__(self, msg_id, context, crc_check, body, length):
         self.__id = msg_id
@@ -377,7 +351,7 @@ class MessageReceiver:
 
 
 
-def create_message(msg_id, body, context=0, max_packet_size=MAX_PACKET_SIZE, fail_crc_factor=None):
+def create_message(msg_id, body, context=0, max_packet_size=MAX_PACKET_SIZE):
     """
     Create message with name, body_len, crc, id
     fail_crc_factor: propability factor to fail crc, value 4 means that 1 of 4 transmissions will fail crc, overwrites fail_crc
@@ -396,11 +370,6 @@ def create_message(msg_id, body, context=0, max_packet_size=MAX_PACKET_SIZE, fai
     msg_id = struct.pack('H', msg_id)                       #two bytes
     context = struct.pack('H', context)  # two bytes
     c = crc(body)                                   #two bytes field
-    if fail_crc_factor:
-        if randrange(0, fail_crc_factor) == 0:
-            c1 = c[0]
-            c2 = chr(ord(c[1]) + 1) if ord(c[1]) <= 0xff else chr(ord(c[1]) - 1)
-            c = c1 + c2
     return '>{id}{context}{body_len}{crc}<{body}'.format(id=msg_id, context=context, body_len=body_len, crc=c, body=body)
 
 

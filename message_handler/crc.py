@@ -21,9 +21,9 @@ def crc(buffer):
     return struct.pack('H', crc)
 
 
-
 def unpack_crc(crc):
     return struct.unpack('H', crc)[0]
+
 
 def crc_xmodem(crc, data):
     crc = 0xffff&(crc ^ (data << 8))

@@ -402,13 +402,6 @@ class Reflasher(QtGui.QWidget):
     def test_connection_slot(self):
         self.test_connection.start()
 
-    # def _find_version_of_hex_to_reflash(self, bin_file):
-    #     version_location_pos = bin_file.find("Version:R")
-    #     version_location_pos_end = bin_file.find("\n", version_location_pos)
-    #     if version_location_pos > 1:
-    #         new_version = bin_file[version_location_pos:version_location_pos_end-1]
-    #         return new_version
-
     def get_last_hex_file_path(self):
         config = configparser.ConfigParser()
         config.read(self.app_status_file)
@@ -418,7 +411,6 @@ class Reflasher(QtGui.QWidget):
             return path
         except KeyError:
             return ''
-
 
     def select_file(self):
         print 'select'
@@ -442,8 +434,6 @@ class Reflasher(QtGui.QWidget):
                 bin_segments = intel_hex_parser(hex_lines, self.text_browser.append)
                 start_address = 0
                 self.text_browser.append("Reflash with:\n{}\n".format(file_path))
-                self.__expected_version = self._find_version_of_hex_to_reflash(bin_segments[start_address])
-                self.text_browser.append("Version of new software: {}".format(self.__expected_version))
                 self.bin_segments_to_packets(bin_segments[start_address])
                 self.reflash.start()
         except IOError:
@@ -509,60 +499,55 @@ class Reflasher(QtGui.QWidget):
 
     @thread_this_method()
     def reflash(self):
-        timeout = 30
+        """
+        Main reflashing thread
+        """
+        reflash_timeout = 30
         rxtimeout = 1
         self.progress_bar.set_val_signal.emit(0)
         if self.connection is None or not self.connection.isOpen():
             self.connection = self.establish_connection()
 
-        self.test_connection_thread = GuiThread(process=self.test_connection_with_req, args=(self.connection,))
-        self.test_connection_thread.start()
-        while self.test_connection_thread.returned() is None:
-            pass
-        if self.test_connection_thread.returned() is False:
+        test_connection_thread = GuiThread(process=self.test_connection_with_req, args=(self.connection,))
+        test_connection_thread.start()
+        if test_connection_thread.get_result(timeout=2) is False:
             self.text_browser.append("Bootloader did not repsond !")
             return
+
         message_sender = MessageSender(self.connection.send)
         message_sender.send(MessageSender.ID.rxflush)
         num_of_packets = len(self.packets)
         t0 = time.time()
         context_to_packet_index_map = {}
-        self.rx_message_buffer = {}
+        self.rx_message_buffer = {}     #reset rx message buffer
         while self.packets:
             packet_index = self.packets.keys()[0]
+
             context = message_sender.send(MessageSender.ID.write_to_page,
                                 body=struct.pack('H', packet_index) + self.packets[packet_index])
-            dbg("Sending ctx: {}, remaininig: {}".format(context, len(self.packets)))
+
             context_to_packet_index_map[context] = packet_index
-            _t0 = time.time()
-            _dbg_print_time = time.time()
+            tx_t0 = time.time()
             while context not in self.rx_message_buffer:
-                if time.time() - _dbg_print_time > 0.5:
-                    dbg("wait for {}".format(context))
-                    _dbg_print_time = time.time()
                 time.sleep(0.01)
-                if time.time() - _t0 > rxtimeout:
-                    dbg('timeout')
-                    self.text_browser.append("dtx")
+                if time.time() - tx_t0 > rxtimeout:
+                    dbg('timeout for context: {}'.format(context))
                     break
             else:
                 if self.rx_message_buffer[context].id == RxMessage.RxId.ack:
                     __packet_index = context_to_packet_index_map[context]
                     self.packets.pop(__packet_index)
-                    dbg('got ok')
-                    self.text_browser.append("ack")
-                else:
-                    self.text_browser.append("nack")
                 self.rx_message_buffer.pop(context)
                 context_to_packet_index_map.pop(context)
                 self.progress_bar.set_val_signal.emit(100*float(num_of_packets-len(self.packets))/num_of_packets)
 
-            if time.time() - t0 > timeout:
+            if time.time() - t0 > reflash_timeout:
                 self.text_browser.append("REFLASHING FAILED")
                 return
         self.text_browser.append("REFLASHING FINISHED")
         self.text_browser.append("{}".format(time.time()-t0))
         message_sender.send(MessageSender.ID.run_main_app_btl)
+        self.cancel_button.setText("CLOSE")
 
 
 

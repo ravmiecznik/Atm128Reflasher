@@ -1,9 +1,10 @@
 """
 author: Rafal Miecznik
 contact: ravmiecznk@gmail.com
+
+Some useful tools...
 """
 
-#from setup_emubt import info, debug, error, warn
 import struct
 
 class WindowGeometry(object):

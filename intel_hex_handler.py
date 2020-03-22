@@ -5,14 +5,9 @@ contact: ravmiecznk@gmail.com
 
 import platform
 platform = platform.system()
-# print platform
-# if platform != 'Linux':
-#     import qdarkstyle
 
-def local_print(msg):
-    print "{}: {}".format(__file__, msg)
 
-def intel_hex_parser(hex_string_lines, info=local_print):
+def intel_hex_parser(hex_string_lines, info=lambda x:x):
     """
     :param hex_string_lines: list of text lines of intel hex format
     :return: segmented binary file as dict, each segment key corresponds to target address

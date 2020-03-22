@@ -56,6 +56,10 @@ class ThreadById:
         return self.__str__()
 
 
+class ResultTimeout(Exception):
+    pass
+
+
 class GuiThread(QThread):
     threads = []
 
@@ -124,6 +128,15 @@ class GuiThread(QThread):
     def returned(self):
         return self.result
 
+    def get_result(self, timeout=1):
+        """
+        Gets return value from thread
+        """
+        t0 = time.time()
+        while self.result is None:
+            if time.time() - t0 > timeout:
+                raise ResultTimeout("No result from: {}".format(self.target.__name__))
+        return self.result
 
     @property
     def t_id(self):

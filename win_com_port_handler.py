@@ -3,9 +3,6 @@ author: Rafal Miecznik
 contact: ravmiecznk@gmail.com
 creation date: 2020-03-18
 """
-
-import string
-
 import serial
 import serial.tools.list_ports
 from serial.tools.list_ports_common import ListPortInfo
@@ -57,7 +54,7 @@ class ListPortInfoEncodingFix(ListPortInfo):
         s = 'device: {}\nmanufacturer: {}\ninterface: {}'.format(self.device, self.manufacturer, self.interface)
         return s
 
-#update original class with fixed one
+# update original class with fixed one
 serial.tools.list_ports_common.ListPortInfo = ListPortInfoEncodingFix
 ListPortInfo = ListPortInfoEncodingFix
 
