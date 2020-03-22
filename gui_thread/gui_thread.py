@@ -5,11 +5,9 @@ contact: ravmiecznk@gmail.com
 
 import time
 from PyQt4.QtCore import QThread
-from gui.config import LOG_PATH, thread_logger as t_logger
+from config import LOG_PATH, thread_logger as t_logger
 
 info = t_logger.info
-
-
 
 
 def thread_this_method(**thread_kwargs):

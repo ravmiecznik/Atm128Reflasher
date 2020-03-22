@@ -8,10 +8,8 @@ import time
 import serial
 from queue import Queue
 from threading import Thread, Lock
-from gui.circ_io_buffer import CircIoBuffer
 
-from gui.gui_thread import thread_this_method, GuiThread
-from gui.config import thread_logger
+from config import thread_logger
 
 dbg = thread_logger.debug
 

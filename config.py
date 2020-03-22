@@ -1,7 +1,7 @@
 import os
 from loggers import create_logger
 
-LOG_PATH = os.path.join(os.getcwd(), "DBG")
+LOG_PATH = os.path.join(os.getcwd(), "REFLASHER_DBG")
 
 if not os.path.isdir(LOG_PATH):
     os.mkdir(LOG_PATH)

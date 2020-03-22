@@ -8,7 +8,7 @@ import configparser
 import time
 import struct
 import textwrap
-from queue import Queue, Empty
+from queue import Empty
 import serial
 
 from PyQt4 import QtGui
@@ -19,8 +19,8 @@ from intel_hex_handler import intel_hex_parser
 from gui_thread import thread_this_method, GuiThread
 from win_com_port_handler import get_com_devices, ListPortInfo
 
-from gui.loggers import create_logger, log_format_basic
-from gui.message_handler import MessageSender, MessageReceiver, RxMessage
+from loggers import create_logger, log_format_basic
+from message_handler import MessageSender, MessageReceiver, RxMessage
 from serial_handler import SerialConnection
 from circ_io_buffer import CircIoBuffer
 from config import LOG_PATH
@@ -233,7 +233,7 @@ class Reflasher(QtGui.QWidget):
 
     general_signal_args_kwargs = pyqtSignal(object, object, object)
 
-    def __init__(self, app_status_file,):
+    def __init__(self, app_status_file, serial_connection=None):
         QtGui.QWidget.__init__(self)
         general_signal_factory.signal = self.general_signal_args_kwargs
         self.general_signal_args_kwargs.connect(self.general_signal_slot)
@@ -242,7 +242,7 @@ class Reflasher(QtGui.QWidget):
         self.x_siz, self.y_siz = 600, 400
         self.reflash()
 
-        self.connection = None
+        self.connection = serial_connection if serial_connection is not None else None
         self.rx_buffer = CircIoBuffer(size=258*10)
         self.rx_message_buffer = dict()     # this buffer wont't exceed number of maximum
                                             # possible context ids in msg.id (0xffff)
@@ -373,6 +373,9 @@ class Reflasher(QtGui.QWidget):
             self.text_browser.append("This connection works already")
 
     def retrieve_messages(self):
+        """
+        Do until message available
+        """
         msg = self.message_receiver.get_message()
         while msg:
             self.rx_message_buffer[msg.context] = msg
@@ -380,6 +383,11 @@ class Reflasher(QtGui.QWidget):
 
     @thread_this_method()
     def data_ready_slot(self):
+        """
+        Slot called on 'data available in the buffer' event
+        Gets data from queue and writes to local circular buffer,
+        whehen data in circ buffer call message decoder
+        """
         if self.connection:
             try:
                 while self.connection.queue.qsize() > 0:
@@ -394,16 +402,12 @@ class Reflasher(QtGui.QWidget):
     def test_connection_slot(self):
         self.test_connection.start()
 
-    def anchor_clicked(self, *args, **kwargs):
-        print args, kwargs
-        self.text_browser.setOpenExternalLinks(False)
-
-    def _find_version_of_hex_to_reflash(self, bin_file):
-        version_location_pos = bin_file.find("Version:R")
-        version_location_pos_end = bin_file.find("\n", version_location_pos)
-        if version_location_pos > 1:
-            new_version = bin_file[version_location_pos:version_location_pos_end-1]
-            return new_version
+    # def _find_version_of_hex_to_reflash(self, bin_file):
+    #     version_location_pos = bin_file.find("Version:R")
+    #     version_location_pos_end = bin_file.find("\n", version_location_pos)
+    #     if version_location_pos > 1:
+    #         new_version = bin_file[version_location_pos:version_location_pos_end-1]
+    #         return new_version
 
     def get_last_hex_file_path(self):
         config = configparser.ConfigParser()

@@ -57,7 +57,9 @@ class ListPortInfoEncodingFix(ListPortInfo):
         s = 'device: {}\nmanufacturer: {}\ninterface: {}'.format(self.device, self.manufacturer, self.interface)
         return s
 
+#update original class with fixed one
 serial.tools.list_ports_common.ListPortInfo = ListPortInfoEncodingFix
+ListPortInfo = ListPortInfoEncodingFix
 
 def get_com_devices():
     """

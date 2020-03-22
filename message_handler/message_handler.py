@@ -22,11 +22,11 @@ import sys
 from datetime import datetime
 from crc import crc
 from random import randrange
-from gui.loggers import create_logger
+from loggers import create_logger
 from PyQt4.QtCore import QMutex
 
-from gui.auxiliary_module import Uint16, MeanCalculator
-from gui.config import LOG_PATH
+from auxiliary_module import Uint16, MeanCalculator
+from config import LOG_PATH
 
 
 #log_format = '[%(pathname)s:%(lineno)s %(asctime)s]: %(levelname)s method:"%(funcName)s" %(message)s'
