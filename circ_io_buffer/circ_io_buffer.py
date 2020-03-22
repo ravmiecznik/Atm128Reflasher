@@ -11,7 +11,7 @@ from io import BytesIO
 
 #@shallow_track_class_calls
 class CircIoBuffer(BytesIO):
-    def __init__(self, initial_buffer='', size=1024):
+    def __init__(self, initial_buffer=bytearray(), size=1024):
         initial_buffer = initial_buffer[-size:]
         bytes_len = len(initial_buffer)
         BytesIO.__init__(self, initial_buffer)
@@ -127,7 +127,6 @@ class CircIoBuffer(BytesIO):
         output = '{} <-{}\n'.format(top, self._head)
         output += '{}  {}\n'.format(main, self._available)
         output += '{} <-{}'.format(bottom, self._tail)
-        print output
         return output
 
     def __str__(self):
@@ -151,5 +150,5 @@ if __name__ == "__main__":
     cb.write('rafal')
     for i in '123456':
         cb.write(i)
-        print cb.peek()
+        print(cb.peek())
 

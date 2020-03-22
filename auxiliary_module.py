@@ -28,7 +28,8 @@ def null_function(*args, **kwargs):
 
 class Uint16(int):
     def __init__(self, value, **kwargs):
-        int.__init__(self, value % 0xffff, **kwargs)
+        #int.__init__(self, value % 0xffff, **kwargs)
+        int.__init__(self)
 
     def __new__(self, value, **kwargs):
         obj = int.__new__(self, value % 0xffff, **kwargs)
@@ -97,4 +98,5 @@ uint_to_raw = lambda u: uint16_to_raw(u) if u > 0xff else uint8_to_raw(u)
 
 
 if __name__ == "__main__":
-    print raw_to_uint('\xff\x01')
+    i = Uint16(0xffff+1)
+    print(i)

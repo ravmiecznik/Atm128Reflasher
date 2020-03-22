@@ -9,9 +9,11 @@ import serial
 from queue import Queue
 from threading import Thread, Lock
 
-from config import thread_logger
+from config import thread_logger, LOG_PATH
+from loggers import create_logger
 
 dbg = thread_logger.debug
+rxlog = create_logger("rx_log", log_path=LOG_PATH)
 
 
 class SerialThread(Thread):
@@ -61,6 +63,7 @@ class SerialConnection(serial.Serial):
     def rx_data_thread(self):
         rx_data = self.read(1024)
         while rx_data:
+            rxlog.debug("rxdata: {}".format(rx_data))
             self.queue.put(rx_data, timeout=0.1, block=True)
             rx_data = self.read(1024)
         if self.queue.qsize() > 0:
@@ -79,7 +82,7 @@ if __name__ == "__main__":
     mutex = Lock()
     def job(s):
         with mutex:
-            print job.__name__, s
+            print(job.__name__, s)
 
     t1 = SerialThread(target=job, args=("job1",), period=1)
     t2 = SerialThread(target=job, args=("job2",), delay=0.5, period=0.5)

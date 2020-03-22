@@ -20,7 +20,7 @@ import time
 import sys
 
 from datetime import datetime
-from crc import crc
+from message_handler.crc import crc_bytes
 from random import randrange
 from loggers import create_logger
 from PyQt4.QtCore import QMutex
@@ -130,7 +130,7 @@ class MessageSender:
     def peek_context(self):
         return MessageSender.context + 1
 
-    def send(self, m_id, body='NULL'):
+    def send(self, m_id, body=b'NULL'):
         """
         Polymorphic method for send
         """
@@ -164,7 +164,6 @@ class RxId(tuple):
             except IndexError as e:
                 m_logger.error("{}: {}".format(e, item))
         except TypeError:
-            print "Type error"
             return 'dtx'
 
 
@@ -254,7 +253,7 @@ class RxMessage(object):
                                              context=self.__context,
                                              result=['ack', 'nack', 'dtx'][self.__crc_result],
                                              lenght=self.__len,
-                                             body=' '.join(self.__body[0:20].split()) + '...',
+                                             body=self.__body[0:20] + b'...',
                                              tstamp=self.__tstamp)
 
 
@@ -279,8 +278,8 @@ class MessageReceiver:
         uint16_t    tail_crc= 0;
     """
     TAIL_LEN = 10
-    TAIL_START_MARK = '<'
-    TAIL_END_MARK = '>'
+    TAIL_START_MARK = ord('<')
+    TAIL_END_MARK = ord('>')
     TAIL_CRC_SHIFT_POS = 3
     ts = time.time()
     LOCKED = False
@@ -294,7 +293,7 @@ class MessageReceiver:
     def check_tail(self, peek_buff):
         init_find = peek_buff.find(MessageReceiver.TAIL_START_MARK)
         peek_buff_len = len(peek_buff)
-        for i in xrange(peek_buff_len - MessageReceiver.TAIL_LEN + init_find):
+        for i in range(peek_buff_len - MessageReceiver.TAIL_LEN + init_find):
             latest_find = i + init_find
             try:
                 tail_start_mark_pos = peek_buff[latest_find:].find(MessageReceiver.TAIL_START_MARK)
@@ -311,9 +310,8 @@ class MessageReceiver:
                     _context = struct.unpack('H', tail[3:5])[0]
                     _msg_len = struct.unpack('H', tail[5:7])[0]
                     _body_crc = tail[7:9]
-
                     _tail_crc = peek_buff[tail_end_mark_pos+1: tail_end_mark_pos + MessageReceiver.TAIL_CRC_SHIFT_POS]
-                    tail_integrity = _tail_crc == crc(_full_tail)    # tail integrity check
+                    tail_integrity = _tail_crc == crc_bytes(_full_tail)    # tail integrity check
                     if _id < len(RxMessage.rx_id_tuple) and _msg_len < MAX_PACKET_SIZE and _context < 0xffff \
                             and self.rx_buffer.available() > _msg_len and tail_integrity:
                         return _id, _context, _msg_len, _body_crc, tail_start_mark_pos + latest_find, tail_end_mark_pos + latest_find
@@ -337,11 +335,11 @@ class MessageReceiver:
                 self.mutex.unlock()
                 msg_body = msg_body[:tail_start_mark_pos]
                 MessageReceiver.ts = time.time()
-                crc_check = RxMessage.RxId.ack if _crc == crc(msg_body) else RxMessage.RxId.nack
+                crc_check = RxMessage.RxId.ack if _crc == crc_bytes(msg_body) else RxMessage.RxId.nack
                 rxmsg = RxMessage(msg_id=_id, crc_check=crc_check, length=len(msg_body), context=_context, body=msg_body)
                 m_logger.debug(MSG_RX_DBG_TEMPLATE.format(rxmsg))
                 self.t0 = time.time()
-                if _crc == crc(msg_body):
+                if _crc == crc_bytes(msg_body):
                     self.__mean_rx_time.count(time.time() - t0)
                     ret_rxmsg = rxmsg
                 m_logger.debug("Mean msg extract time: {}".format(self.__mean_rx_time))
@@ -357,7 +355,7 @@ def create_message(msg_id, body, context=0, max_packet_size=MAX_PACKET_SIZE):
     fail_crc_factor: propability factor to fail crc, value 4 means that 1 of 4 transmissions will fail crc, overwrites fail_crc
     :param msg_id: msg id
     :param context: msg context
-    :param body:
+    :param body: bytearray
     :param max_packet_size:
     :param fail_crc_factor: fail factor for testing purposes
     :return:
@@ -366,13 +364,21 @@ def create_message(msg_id, body, context=0, max_packet_size=MAX_PACKET_SIZE):
     header_size = 10
     if body_len + header_size > max_packet_size:
         raise Exception("msg len to big: {}>{}".format(body_len + header_size, max_packet_size))
+
+    print("id: {}, context: {}, blen: {}".format(msg_id, context, body_len))
+
     body_len = struct.pack('I', body_len)
     msg_id = struct.pack('H', msg_id)                       #two bytes
     context = struct.pack('H', context)  # two bytes
-    c = crc(body)                                   #two bytes field
-    return '>{id}{context}{body_len}{crc}<{body}'.format(id=msg_id, context=context, body_len=body_len, crc=c, body=body)
+    c = crc_bytes(body)                                   #two bytes field
+    #raw_msg = '>{id}{context}{body_len}{crc}<{body}'.format(id=msg_id, context=context, body_len=body_len, crc=c, body=body)
+    raw_msg = b'>' + msg_id + context + body_len + c + b'<' + body
+    #print(raw_msg)
+    # print(''.join(['|{:02X}'.format(ord(i)) if i not in ['<', '>'] else i for i in raw_msg]))
+    # print(''.join(['|{:2s}'.format(i) if i not in ['<', '>'] else i for i in raw_msg]))
+    return raw_msg
 
 
 if __name__ == "__main__":
     rm = RxMessage(1, 2, 3, 'rafal')
-    print rm
+    print(rm)

@@ -270,13 +270,13 @@ if __name__ == "__main__":
             self.thr.start()
             self.thr2.start()
             time.sleep(2)
-            print self.buff.read()
+            print(self.buff.read())
             for d in dir(self.mutex):
-                print d
+                print(d)
 
 
         def fun(self):
-            print self.mutex.tryLock()
+            print(self.mutex.tryLock())
             self.buff.write(' rafal')
             self.mutex.unlock()
             #print self.thr.currentThreadId()
@@ -297,6 +297,6 @@ if __name__ == "__main__":
     myapp.thr = thr
     myapp.show()
     app.exec_()
-    print 'bye'
+    print('bye')
     sys.exit()
 

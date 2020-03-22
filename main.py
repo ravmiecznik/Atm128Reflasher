@@ -13,7 +13,12 @@ import serial
 
 from PyQt4 import QtGui
 from PyQt4.QtGui import QFileDialog
-from PyQt4.QtCore import pyqtSignal, QString
+from PyQt4.QtCore import pyqtSignal
+try:
+    from PyQt4.QtCore import QString
+except ImportError:
+    from qstring_encoder import QStringEncoder
+    QString = QStringEncoder()
 
 from intel_hex_handler import intel_hex_parser
 from gui_thread import thread_this_method, GuiThread
@@ -25,7 +30,6 @@ from serial_handler import SerialConnection
 from circ_io_buffer import CircIoBuffer
 from config import LOG_PATH
 
-print LOG_PATH
 
 stdout_log = create_logger("stdout", log_path=LOG_PATH)
 dbg = stdout_log.debug
@@ -190,8 +194,6 @@ class ComDevicesComboBox(QtGui.QGroupBox):
         }[ListPortInfo.encoding_scheme]
         self.devices = [i for i in com_devices]
         self.devices.sort(key=lambda i:i.manufacturer != 'FTDI')
-        print [i.manufacturer for i in self.devices]
-        print [i.device for i in self.devices]
         self.port_dev_combo_box.addItems([i.device for i in self.devices])
 
         grid = QtGui.QGridLayout()
@@ -222,7 +224,7 @@ class ComDevicesComboBox(QtGui.QGroupBox):
         return self.dev_type_combo_box.currentText()
 
     def get_current_serial_device(self):
-        device = filter(lambda i: i.device==self.port_dev_combo_box.currentText(), self.devices)[0]
+        device = list(filter(lambda i: i.device == self.port_dev_combo_box.currentText(), self.devices))[0]
         return device.device
 
 
@@ -325,7 +327,6 @@ class Reflasher(QtGui.QWidget):
         event.accept()
 
     def close(self):
-        print "closing"
         if self.connection and self.connection.isOpen():
             self.connection.close()
         QtGui.QWidget.close(self)
@@ -377,6 +378,7 @@ class Reflasher(QtGui.QWidget):
         Do until message available
         """
         msg = self.message_receiver.get_message()
+        stdout_log.debug("msg: ".format(msg))
         while msg:
             self.rx_message_buffer[msg.context] = msg
             msg = self.message_receiver.get_message()
@@ -413,7 +415,6 @@ class Reflasher(QtGui.QWidget):
             return ''
 
     def select_file(self):
-        print 'select'
         start_dir = os.path.dirname(self.last_hex_path)
         file_path = QFileDialog.getOpenFileName(self, 'Select hex file',
                                                 start_dir, "hex files (*.hex *.HEX)")
@@ -443,8 +444,12 @@ class Reflasher(QtGui.QWidget):
     def bin_segments_to_packets(self, bin_segments):
         self.packets = {}
         cnt = 0
-        print "size", hex(len(bin_segments))
-        for i in xrange(0, len(bin_segments), PACKET_SIZE):
+        # print(bin_segments)
+        # for i in range(0, len(bin_segments), 16):
+        #     s = bin_segments[i: i+16]
+        #     print((len(s)*'{:02X}').format(*s))
+        # return
+        for i in range(0, len(bin_segments), PACKET_SIZE):
             self.packets[cnt] = bin_segments[i:i+PACKET_SIZE]
             cnt += 1
         return self.packets
@@ -485,7 +490,7 @@ class Reflasher(QtGui.QWidget):
 
         while retx > 0:
             t0 = time.time()
-            while 'bootloader3' not in [self.rx_message_buffer[m].msg for m in self.rx_message_buffer]:
+            while b'bootloader3' not in [self.rx_message_buffer[m].msg for m in self.rx_message_buffer]:
                 time.sleep(0.1)
                 if time.time() - t0 > timeout:
                     MessageSender(connection.write).send(MessageSender.ID.bootloader)
@@ -521,7 +526,7 @@ class Reflasher(QtGui.QWidget):
         context_to_packet_index_map = {}
         self.rx_message_buffer = {}     #reset rx message buffer
         while self.packets:
-            packet_index = self.packets.keys()[0]
+            packet_index = list(self.packets.keys())[0]
 
             context = message_sender.send(MessageSender.ID.write_to_page,
                                 body=struct.pack('H', packet_index) + self.packets[packet_index])

@@ -14,10 +14,16 @@ B           unsigned char   integer             1
 ...and more
 """
 
-def crc(buffer):
+# def crc_str(buffer):
+#     crc = 0
+#     for i in buffer:
+#         crc = crc_xmodem(crc, struct.unpack('b', i.encode())[0])
+#     return struct.pack('H', crc)
+
+def crc_bytes(buffer):
     crc = 0
     for i in buffer:
-        crc = crc_xmodem(crc, struct.unpack('b',i)[0])
+        crc = crc_xmodem(crc, i)
     return struct.pack('H', crc)
 
 
@@ -26,7 +32,7 @@ def unpack_crc(crc):
 
 
 def crc_xmodem(crc, data):
-    crc = 0xffff&(crc ^ (data << 8))
+    crc = 0xffff & (crc ^ (data << 8))
     for i in range(0, 8):
         if crc & 0x8000:
             crc = 0xffff&((crc << 1) ^ 0x1021)
@@ -36,4 +42,4 @@ def crc_xmodem(crc, data):
 
 
 if __name__ == "__main__":
-    print hex(ord(crc('rafal')[0])), hex(ord(crc('rafal')[1]))
+    crc_xmodem(crc_str, struct.unpack('b', 's')[0])
