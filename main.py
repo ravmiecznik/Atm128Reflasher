@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 author: Rafal Miecznik
 contact: ravmiecznk@gmail.com
@@ -19,6 +20,9 @@ try:
 except ImportError:
     from qstring_encoder import QStringEncoder
     QString = QStringEncoder()
+
+
+import icons
 
 from intel_hex_handler import intel_hex_parser
 from gui_thread import thread_this_method, GuiThread
@@ -287,7 +291,8 @@ class Reflasher(QtGui.QWidget):
 
         #BUTTONS
         self.browse_button = QtGui.QPushButton()
-        browse_icon_path = os.path.join('icons', 'browse.png')
+        browse_icon_path = icons.browse_icon
+        print(browse_icon_path)
         self.browse_button.setIcon(QtGui.QIcon(browse_icon_path))
         self.browse_button.setToolTip("Browse for hex file")
         self.reflash_button = QtGui.QPushButton("REFLASH")
@@ -312,7 +317,7 @@ class Reflasher(QtGui.QWidget):
         self.__expected_version = None
         self.resize(self.x_siz, self.y_siz)
 
-        flash_icon_path = os.path.join('icons', 'flash.png')
+        flash_icon_path = icons.flash_icon
         self.setWindowIcon(QtGui.QIcon(flash_icon_path))
 
         # threads
@@ -484,7 +489,7 @@ class Reflasher(QtGui.QWidget):
         self.rx_message_buffer = {}
         try:
             MessageSender(connection.write).send(MessageSender.ID.bootloader)
-        except serial.serialutil.SerialTimeoutException:
+        except (serial.serialutil.SerialTimeoutException, AttributeError):
             self.text_browser.append("Connection write test failed")
             return False
 
